@@ -1,32 +1,35 @@
 package com.db2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Transaction {
 	public static int TS = 0;
 	// public int tid;
 	public int trans_timestamp;
 	public String trans_state;
-	public String items_locked;
+	public List<String> items_locked;
 	
 	
 	
+	public void setItems_locked(List<String> items_locked) {
+		this.items_locked = items_locked;
+	}
+
 	public Transaction() {
 	}
 
-	public Transaction(String trans_state, String items_locked) {
+	public Transaction(String trans_state) {
 		this.trans_state = trans_state;
-		this.items_locked = items_locked;
+		this.items_locked = new ArrayList<String>();
 		this.trans_timestamp = ++TS;
 	}
 	
-	public void setItems_locked(String item) {
-		if (this.items_locked.equals("none")) {
-			this.items_locked = item;
-		} else
-			this.items_locked = this.items_locked + item;
-	}
+//	public void setItems_locked(String item) {
+//			this.items_locked.add(item);
+//	}
 	
-	public String getItems_locked() {
-
+	public List<String> getItems_locked() {
 		return this.items_locked;
 	}
 

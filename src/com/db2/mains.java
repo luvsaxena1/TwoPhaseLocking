@@ -21,7 +21,7 @@ public class mains {
 		data = obj1.ReadFile();
 		System.out.println("Implementation of Rigorous 2PL");
 		TransactionProcess process = new TransactionProcess();
-//		process.ReadTransactions();
+		process.readTransactions();
 
 	}
 
