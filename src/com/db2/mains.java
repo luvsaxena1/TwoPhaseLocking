@@ -11,7 +11,6 @@ import java.util.Queue;
 public class mains {
 	public static HashMap<Integer, Transaction> transMap = new HashMap<Integer, Transaction>();
 	public static HashMap<String, LockTable> lockMap = new HashMap<String, LockTable>();
-	public static Queue<Integer> q = new PriorityQueue<Integer>();
 	public static String[] data = new String[20];
 	public static LinkedList<String> waitTransactionList = new LinkedList<String>();
 
@@ -22,6 +21,7 @@ public class mains {
 		System.out.println("Implementation of Rigorous 2PL");
 		TransactionProcess process = new TransactionProcess();
 		process.readTransactions();
+		System.exit(0);
 
 	}
 
@@ -42,7 +42,7 @@ public class mains {
 			while (line != null) {
 				myarray[i] = line;
 				line = reader.readLine();
-				System.out.println(myarray[i]);
+				//System.out.println(myarray[i]);
 				i++;
 			}
 			reader.close();
