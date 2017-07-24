@@ -21,7 +21,6 @@ public class TransactionProcess {
 				int tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf(";")));
 				mains.transMap.put(tid, transaction);
 				System.out.println("Begin Transaction: T" + tid);
-
 				break;
 
 			case "r":
@@ -60,12 +59,23 @@ public class TransactionProcess {
 									mains.transMap.get(tid).setItems_locked(lockItemList);
 									System.out.println("T" + tid + " has a read lock on item " + itemname);
 								}
-								if ((mains.lockMap.get(itemname).getTransid_WL()) != 0) {
+								
+								else if ((mains.lockMap.get(itemname).getTransid_WL()) != 0) {
 									System.out.println("Item " + key + " is Writelocked and not available!");
 									check_deadlock(tid, itemname, "r");
 								}
+								else {
+									readList = new ArrayList<Integer>();
+									readList.add(tid);
+									mains.lockMap.get(itemname).setTransid_RL(readList);
+									if(mains.transMap.get(tid).getItems_locked() != null){
+										lockItemList = mains.transMap.get(tid).getItems_locked();
+									}
+									lockItemList.add(itemname);
+									mains.transMap.get(tid).setItems_locked(lockItemList);
+									System.out.println("T" + tid + " has a read lock on item " + itemname);
+								}
 							}
-
 						}
 					}
 				} else
@@ -79,7 +89,6 @@ public class TransactionProcess {
 					List<String> lockItemList = null;
 					LockTable L1 = new LockTable();
 					String itemname1 = filedata[i].substring(filedata[i].indexOf("(") + 1, filedata[i].indexOf(")"));
-
 					// check if exists in locktable- yes:check read/write lock
 					// No:insert into locktable
 					if (!mains.lockMap.containsKey(itemname1)) {
@@ -94,9 +103,7 @@ public class TransactionProcess {
 						System.out.println("T" + tid + " has a write lock on item " + itemname1);
 					} else {
 						for (String key : mains.lockMap.keySet()) {
-
 							if (key.equals(itemname1)) {
-								//
 								if ((mains.lockMap.get(itemname1).getTransid_WL() != 0)) {
 									System.out.println("Item " + key
 											+ " is Writelocked and not available! Proccessing for wait and die condition");
@@ -105,7 +112,6 @@ public class TransactionProcess {
 								}
 								List<Integer> readList1 = mains.lockMap.get(itemname1).getTransid_RL();
 								if ((readList1.size() == 1) && readList1.get(0) == tid) {
-
 									upgradeReadToWrite(tid, itemname1);
 								} else {
 									// check wait and die here again put it in a
@@ -154,7 +160,6 @@ public class TransactionProcess {
 	public void unlockTransaction(Integer tid) {
 		if (!mains.transMap.get(tid).getItems_locked().isEmpty()) {
 			List<String> lockedItemList = mains.transMap.get(tid).getItems_locked();
-
 			/**
 			 * Loop to iterate over item and see if they have any other lock if
 			 * they have lock on different transaction id then remove the lock
@@ -162,7 +167,6 @@ public class TransactionProcess {
 			 */
 			if (lockedItemList != null) {
 				for (String itemName : lockedItemList) {
-
 					if (mains.lockMap.get(itemName).getTransid_RL() != null) {
 						List<Integer> transidRL = mains.lockMap.get(itemName).getTransid_RL();
 						int i = 0;
@@ -182,7 +186,6 @@ public class TransactionProcess {
 							mains.lockMap.get(itemName).setTransid_WL(transidWL);
 						}
 					}
-
 					// REFINING WAIT LIST
 					if (!mains.waitTransactionList.isEmpty()) {
 						int i = 0;
@@ -202,7 +205,6 @@ public class TransactionProcess {
 						Integer writeLockTid = mains.lockMap.get(itemName).getTransid_WL();
 						List<Integer> readList1 = null;
 						readList1 = mains.lockMap.get(itemName).getTransid_RL();
-
 						if (waitingTransaction.substring(0, 1).equals("w")) {
 							if (readList1 != null) {
 								if (readList1.size() == 1 && readList1.contains(readWaitListId)
@@ -213,13 +215,13 @@ public class TransactionProcess {
 											+ " keeps waiting in the wait list");
 								}
 							}
-							if (readList1 == null || writeLockTid == 0) {
+							if (readList1 == null || writeLockTid == 0 && itemName1.equals(itemName)) {
 								System.out.println("Assign from wait list");
 								writeLockTid = readWaitListId;
-								mains.lockMap.get(itemName1).setTransid_WL(writeLockTid);
+								mains.lockMap.get(itemName).setTransid_WL(writeLockTid);
 								mains.waitTransactionList.remove(0);
+								System.out.println("Assigning lock to operation w"+writeLockTid+" from waiting list on item "+itemName1);
 							}
-
 							if (readWaitListId != writeLockTid) {
 								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
 										+ " keeps waiting in the wait list");
@@ -227,14 +229,15 @@ public class TransactionProcess {
 						}
 
 						else if (waitingTransaction.substring(0, 1).equals("r")) {
-							if (writeLockTid == 0) {
+							if (writeLockTid == 0 && itemName1.equals(itemName)) {
 
 								if (readList1 == null) {
 									readList1 = new ArrayList<Integer>();
 								}
 								readList1.add(readWaitListId);
-								mains.lockMap.get(itemName1).setTransid_RL(readList1);
+								mains.lockMap.get(itemName).setTransid_RL(readList1);
 								mains.waitTransactionList.remove(0);
+								System.out.println("Assigning lock to operation r"+writeLockTid+" from waiting list on item "+itemName1);
 							} else {
 								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
 										+ " keeps waiting in the wait list");
