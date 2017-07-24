@@ -1,16 +1,12 @@
 package com.db2;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Transaction {
 	public static int TS = 0;
-	// public int tid;
 	public int trans_timestamp;
 	public String trans_state;
 	public List<String> items_locked;
-	
-	
 	
 	public void setItems_locked(List<String> items_locked) {
 		this.items_locked = items_locked;
@@ -24,10 +20,6 @@ public class Transaction {
 		this.items_locked = new ArrayList<String>();
 		this.trans_timestamp = ++TS;
 	}
-	
-//	public void setItems_locked(String item) {
-//			this.items_locked.add(item);
-//	}
 	
 	public List<String> getItems_locked() {
 		return this.items_locked;
