@@ -2,19 +2,20 @@ package com.db2;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.List;
 
 public class mains {
 	public static HashMap<Integer, Transaction> transMap = new HashMap<Integer, Transaction>();
 	public static HashMap<String, LockTable> lockMap = new HashMap<String, LockTable>();
-	public static String[] data = new String[20];
+	public static String[] data = null;
 	public static LinkedList<String> waitTransactionList = new LinkedList<String>();
 
-	public static void main(String args[]) {
+	public static void main(String args[]) throws IOException {
 
 		mains obj1 = new mains();
 		data = obj1.ReadFile();
@@ -25,32 +26,15 @@ public class mains {
 
 	}
 
-	public String[] ReadFile() {
-
-		// reading file line by line in Java using BufferedReader
-		FileInputStream fis = null;
-		BufferedReader reader = null;
-		String[] myarray;
-		myarray = new String[20];
-		try {
-//			fis = new FileInputStream("C:/Users/Luv/Desktop/input1.txt");
-			fis = new FileInputStream("C:/Users/Luv/Desktop/input2.txt.txt");
-			reader = new BufferedReader(new InputStreamReader(fis));
-			int i = 0;
-			String line = reader.readLine();
-
-			while (line != null) {
-				myarray[i] = line;
-				line = reader.readLine();
-				//System.out.println(myarray[i]);
-				i++;
-			}
-			reader.close();
+	public String[] ReadFile() throws IOException {
+		BufferedReader in = new BufferedReader(new FileReader("C:/Users/Luv/Desktop/input6.txt"));
+		String str=null;
+		ArrayList<String> lines = new ArrayList<String>();
+		while((str = in.readLine()) != null){
+		    lines.add(str.replaceAll("\\s",""));
 		}
-
-		catch (Exception e) {
-			System.out.println("Error");
-		}
-		return myarray;
+		String[] linesArray = lines.toArray(new String[lines.size()]);
+		
+		return linesArray;
 	}
 }

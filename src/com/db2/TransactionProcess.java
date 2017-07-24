@@ -170,12 +170,14 @@ public class TransactionProcess {
 					if (mains.lockMap.get(itemName).getTransid_RL() != null) {
 						List<Integer> transidRL = mains.lockMap.get(itemName).getTransid_RL();
 						int i = 0;
+						if(!transidRL.isEmpty()){
 						for (Integer commitAbortTid : transidRL) {
 							if (commitAbortTid == tid) {
 								transidRL.remove(i);
 							}
 							i++;
 						}
+						}	
 						mains.lockMap.get(itemName).setTransid_RL(transidRL);
 					} else {
 						if (mains.lockMap.get(itemName).getTransid_WL() != 0) {
