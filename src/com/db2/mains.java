@@ -27,7 +27,7 @@ public class mains {
 	}
 
 	public String[] ReadFile() throws IOException {
-		BufferedReader in = new BufferedReader(new FileReader("C:/Users/Luv/Desktop/input6.txt"));
+		BufferedReader in = new BufferedReader(new FileReader("C:/Users/Luv/Desktop/input7.txt"));
 		String str=null;
 		ArrayList<String> lines = new ArrayList<String>();
 		while((str = in.readLine()) != null){

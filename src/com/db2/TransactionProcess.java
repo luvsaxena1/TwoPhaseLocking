@@ -2,6 +2,7 @@ package com.db2;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class TransactionProcess {
@@ -59,16 +60,15 @@ public class TransactionProcess {
 									mains.transMap.get(tid).setItems_locked(lockItemList);
 									System.out.println("T" + tid + " has a read lock on item " + itemname);
 								}
-								
+
 								else if ((mains.lockMap.get(itemname).getTransid_WL()) != 0) {
 									System.out.println("Item " + key + " is Writelocked and not available!");
 									check_deadlock(tid, itemname, "r");
-								}
-								else {
+								} else {
 									readList = new ArrayList<Integer>();
 									readList.add(tid);
 									mains.lockMap.get(itemname).setTransid_RL(readList);
-									if(mains.transMap.get(tid).getItems_locked() != null){
+									if (mains.transMap.get(tid).getItems_locked() != null) {
 										lockItemList = mains.transMap.get(tid).getItems_locked();
 									}
 									lockItemList.add(itemname);
@@ -169,15 +169,13 @@ public class TransactionProcess {
 				for (String itemName : lockedItemList) {
 					if (mains.lockMap.get(itemName).getTransid_RL() != null) {
 						List<Integer> transidRL = mains.lockMap.get(itemName).getTransid_RL();
-						int i = 0;
-						if(!transidRL.isEmpty()){
-						for (Integer commitAbortTid : transidRL) {
+						Iterator<Integer> iterator = transidRL.iterator();
+						while (iterator.hasNext()) {
+							Integer commitAbortTid = iterator.next();
 							if (commitAbortTid == tid) {
-								transidRL.remove(i);
+								iterator.remove();
 							}
-							i++;
 						}
-						}	
 						mains.lockMap.get(itemName).setTransid_RL(transidRL);
 					} else {
 						if (mains.lockMap.get(itemName).getTransid_WL() != 0) {
@@ -190,13 +188,20 @@ public class TransactionProcess {
 					}
 					// REFINING WAIT LIST
 					if (!mains.waitTransactionList.isEmpty()) {
-						int i = 0;
-						for (String waitTransaction : mains.waitTransactionList) {
-							Integer removedTransaction = Integer.parseInt(waitTransaction.substring(1, 2));
-							if (removedTransaction == tid) {
-								mains.waitTransactionList.remove(i);
+//						int i = 0;
+//						for (String waitTransaction : mains.waitTransactionList) {
+//							Integer removedTransaction = Integer.parseInt(waitTransaction.substring(1, 2));
+//							if (removedTransaction == tid) {
+//								mains.waitTransactionList.remove(i);
+//							}
+//							i++;
+//						}
+						Iterator<String> iterator = mains.waitTransactionList.iterator();
+						while (iterator.hasNext()) {
+							Integer commitAbortTid = Integer.parseInt(iterator.next().substring(1, 2));
+							if (commitAbortTid == tid) {
+								iterator.remove();
 							}
-							i++;
 						}
 					}
 					if (!mains.waitTransactionList.isEmpty()) {
@@ -222,7 +227,8 @@ public class TransactionProcess {
 								writeLockTid = readWaitListId;
 								mains.lockMap.get(itemName).setTransid_WL(writeLockTid);
 								mains.waitTransactionList.remove(0);
-								System.out.println("Assigning lock to operation w"+writeLockTid+" from waiting list on item "+itemName1);
+								System.out.println("Assigning lock to operation w" + writeLockTid
+										+ " from waiting list on item " + itemName1);
 							}
 							if (readWaitListId != writeLockTid) {
 								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
@@ -239,7 +245,8 @@ public class TransactionProcess {
 								readList1.add(readWaitListId);
 								mains.lockMap.get(itemName).setTransid_RL(readList1);
 								mains.waitTransactionList.remove(0);
-								System.out.println("Assigning lock to operation r"+writeLockTid+" from waiting list on item "+itemName1);
+								System.out.println("Assigning lock to operation r" + writeLockTid
+										+ " from waiting list on item " + itemName1);
 							} else {
 								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
 										+ " keeps waiting in the wait list");
