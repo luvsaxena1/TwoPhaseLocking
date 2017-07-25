@@ -14,13 +14,21 @@ public class TransactionProcess {
 		while (filedata[i] != null) {
 			System.out.println("Operation: " + filedata[i]);
 			switch (filedata[i].substring(0, 1)) {
+			/*
+			 * Beginning of a new transaction
+			 */
 			case "b":
 				Transaction transaction = new Transaction("Active");
 				int tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf(";")));
 				TransStart.transMap.put(tid, transaction);
 				System.out.println("Begin Transaction: T" + tid);
 				break;
-
+			/*
+			 * Read operation for a transaction. A data item can have one or
+			 * more read operations. Read-Read is not a conflicting transaction.
+			 * Lock not given is same data item is write-locked by some other
+			 * transaction.
+			 */
 			case "r":
 				tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf("(")));
 				if (TransStart.transMap.get(tid).getTrans_state() != "Aborted") {
@@ -79,7 +87,12 @@ public class TransactionProcess {
 					System.out.println("Operation r" + tid + " could not be performed as transaction " + tid
 							+ " is already aborted!");
 				break;
-
+			/*
+			 * Write operation of a transaction.A data item can have only one
+			 * write operation. Lock not given is same data item is write-locked
+			 * by some other transaction. Read lock can be upgraded to write
+			 * lock is read lock exist by same transaction of same data item
+			 */
 			case "w":
 				tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf("(")));
 				if (TransStart.transMap.get(tid).getTrans_state() != "Aborted") {
@@ -124,7 +137,11 @@ public class TransactionProcess {
 					System.out.println("Operation w" + tid + " could not be performed as transaction " + tid
 							+ " is already aborted!");
 				break;
-
+			/*
+			 * End of a transaction. Status of the transaction will be committed
+			 * if active and all data items held by that data item will be
+			 * released.
+			 */
 			case "e":
 				tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf(";")));
 				checkEndTransaction(tid);
@@ -135,9 +152,11 @@ public class TransactionProcess {
 	}
 
 	/**
-	 * @param tid
+	 * Checking end condition for transaction when operation end_transaction is
+	 * executed and then executing unlock transaction function.
 	 */
 	public void checkEndTransaction(int tid) {
+
 		if (TransStart.transMap.get(tid).getTrans_state() != "Aborted") {
 			if (TransStart.waitTransactionid.contains(tid) && !TransStart.waitTransactionList.contains("e" + tid)) {
 				TransStart.waitTransactionList.add("e" + tid);
@@ -157,8 +176,8 @@ public class TransactionProcess {
 	}
 
 	/**
-	 * @param tid
-	 * @param itemname1
+	 * This function upgrades read lock on a data item by a transaction to write
+	 * lock.
 	 */
 	private void upgradeReadToWrite(int tid, String itemname1) {
 		List<Integer> readList1;
@@ -170,6 +189,11 @@ public class TransactionProcess {
 		System.out.println("T" + tid + " has upgraded to write lock from read Lock on item " + itemname1);
 	}
 
+	/**
+	 * This function releases locks held by transaction and assign the next
+	 * applicable transaction in the waiting list and transferring the locks to
+	 * the new transaction.
+	 */
 	public void unlockTransaction(Integer tid) {
 		if (!TransStart.transMap.get(tid).getItems_locked().isEmpty()) {
 			List<String> lockedItemList = TransStart.transMap.get(tid).getItems_locked();
@@ -306,6 +330,10 @@ public class TransactionProcess {
 		}
 	}
 
+	/**
+	 * The function checks deadlock between conflicting operations by applying
+	 * wait and die method.
+	 */
 	private void check_deadlock(int tid, String itemname1, String oper) {
 		int timestamp_requesting_trans = TransStart.transMap.get(tid).getTrans_timestamp();
 		int transid_itemHolding_trans = 0, timestamp_itemHolding_trans = 0;

@@ -13,7 +13,7 @@ public class TransStart {
 	public static void main(String args[]) throws IOException {
 		TransStart transStartObj = new TransStart();
 		readData = transStartObj.readFile();
-		System.out.println("Implementation of Rigorous 2PL");
+		System.out.println("Rigorous 2PL implementation using wait-die method for dealing with deadlocks\n");
 		TransactionProcess process = new TransactionProcess();
 		process.readTransactions();
 		System.exit(0);
