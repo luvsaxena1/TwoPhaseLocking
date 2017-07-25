@@ -127,17 +127,33 @@ public class TransactionProcess {
 
 			case "e":
 				tid = Integer.parseInt(filedata[i].substring(1, filedata[i].indexOf(";")));
-				if (TransStart.transMap.get(tid).getTrans_state() != "Aborted") {
-					TransStart.transMap.get(tid).setTrans_state("Committed");
-					System.out.println("Transaction " + tid + " has committed");
-					unlockTransaction(tid);
-				} else
-					System.out.println("Operation e" + tid + " could not be performed as transaction " + tid
-							+ " is already aborted!");
+				checkEndTransaction(tid);
 				break;
 			}
 			i++;
 		}
+	}
+
+	/**
+	 * @param tid
+	 */
+	public void checkEndTransaction(int tid) {
+		if (TransStart.transMap.get(tid).getTrans_state() != "Aborted") {
+			if (TransStart.waitTransactionid.contains(tid) && !TransStart.waitTransactionList.contains("e" + tid)) {
+				TransStart.waitTransactionList.add("e" + tid);
+				System.out.println("Other Operations for transaction " + tid + " are in waiting. So, Operation e" + tid
+						+ " has been added to waitlist and could not be committed.");
+			} else {
+				TransStart.transMap.get(tid).setTrans_state("Committed");
+				System.out
+						.println("Transaction " + tid + " has committed and released all the locks held on data items");
+				unlockTransaction(tid);
+				TransStart.waitTransactionList.remove("e" + tid);
+				TransStart.waitTransactionid.remove(tid);
+			}
+		} else
+			System.out.println(
+					"Operation e" + tid + " could not be performed as transaction " + tid + " is already aborted!");
 	}
 
 	/**
@@ -184,69 +200,101 @@ public class TransactionProcess {
 						}
 					}
 					// REFINING WAIT LIST
+					// if (!TransStart.waitTransactionList.isEmpty()) {
+					// int i = 0;
+					// for (String waitTransaction :
+					// TransStart.waitTransactionList) {
+					// Integer removedTransaction =
+					// Integer.parseInt(waitTransaction.substring(1, 2));
+					// if (removedTransaction == tid) {
+					// TransStart.waitTransactionList.remove(i);
+					// }
+					// i++;
+					// }
+					// Iterator<String> iterator =
+					// TransStart.waitTransactionList.iterator();
+					// while (iterator.hasNext()) {
+					// Integer commitAbortTid =
+					// Integer.parseInt(iterator.next().substring(1, 2));
+					// if (commitAbortTid == tid) {
+					// iterator.remove();
+					// }
+					// }
+					// }
+					String waitingTransaction = null;
+					int index = -1;
 					if (!TransStart.waitTransactionList.isEmpty()) {
-//						int i = 0;
-//						for (String waitTransaction : TransStart.waitTransactionList) {
-//							Integer removedTransaction = Integer.parseInt(waitTransaction.substring(1, 2));
-//							if (removedTransaction == tid) {
-//								TransStart.waitTransactionList.remove(i);
-//							}
-//							i++;
-//						}
-						Iterator<String> iterator = TransStart.waitTransactionList.iterator();
-						while (iterator.hasNext()) {
-							Integer commitAbortTid = Integer.parseInt(iterator.next().substring(1, 2));
-							if (commitAbortTid == tid) {
-								iterator.remove();
+						for (String waitTransaction : TransStart.waitTransactionList) {
+							if (!waitTransaction.substring(0, 1).equals("e")) {
+								if (waitTransaction.substring(2, 3).equals(itemName)) {
+									waitingTransaction = waitTransaction;
+									index++;
+									break;
+								}
 							}
 						}
-					}
-					if (!TransStart.waitTransactionList.isEmpty()) {
-						// Refining the waitTransactionList
-						String waitingTransaction = TransStart.waitTransactionList.get(0);
-						Integer readWaitListId = Integer.parseInt(waitingTransaction.substring(1, 2));
-						String itemName1 = waitingTransaction.substring(2, 3);
-						Integer writeLockTid = TransStart.lockMap.get(itemName).getTransid_WL();
-						List<Integer> readList1 = null;
-						readList1 = TransStart.lockMap.get(itemName).getTransid_RL();
-						if (waitingTransaction.substring(0, 1).equals("w")) {
-							if (readList1 != null) {
-								if (readList1.size() == 1 && readList1.contains(readWaitListId)
-										&& itemName1.equals(itemName)) {
-									upgradeReadToWrite(readWaitListId, itemName1);
-								} else {
+						// waitingTransaction =
+						// TransStart.waitTransactionList.get(0);
+						if (waitingTransaction != null || index != -1) {
+							Integer readWaitListId = Integer.parseInt(waitingTransaction.substring(1, 2));
+							String itemName1 = waitingTransaction.substring(2, 3);
+							Integer writeLockTid = TransStart.lockMap.get(itemName).getTransid_WL();
+							List<Integer> readList1 = null;
+							readList1 = TransStart.lockMap.get(itemName).getTransid_RL();
+							if (waitingTransaction.substring(0, 1).equals("w")) {
+								if (readList1 != null) {
+									if (readList1.size() == 1 && readList1.contains(readWaitListId)
+											&& itemName1.equals(itemName)) {
+										upgradeReadToWrite(readWaitListId, itemName1);
+									} else {
+										System.out.println("Transaction " + waitingTransaction.substring(0, 2)
+												+ " keeps waiting in the wait list");
+									}
+								}
+								if ((readList1 == null || writeLockTid == 0) && itemName1.equals(itemName)) {
+									System.out.println(
+											"Processing the operation w" + readWaitListId + " from the wait list.");
+									writeLockTid = readWaitListId;
+									TransStart.lockMap.get(itemName).setTransid_WL(writeLockTid);
+									// TransStart.waitTransactionList.remove(0);
+									TransStart.waitTransactionList.remove(index);
+									System.out.println("Assigning lock to operation w" + writeLockTid
+											+ " from waiting list on item " + itemName1);
+									for (String waitTransaction : TransStart.waitTransactionList) {
+										if (Integer.parseInt(waitTransaction.substring(1, 2)) == writeLockTid
+												&& waitTransaction.substring(0, 1).equals("e")) {
+											checkEndTransaction(writeLockTid);
+										}
+									}
+								}
+								if (readWaitListId != writeLockTid) {
 									System.out.println("Transaction " + waitingTransaction.substring(0, 2)
 											+ " keeps waiting in the wait list");
 								}
 							}
-							if (readList1 == null || writeLockTid == 0 && itemName1.equals(itemName)) {
-								System.out.println("Assign from wait list");
-								writeLockTid = readWaitListId;
-								TransStart.lockMap.get(itemName).setTransid_WL(writeLockTid);
-								TransStart.waitTransactionList.remove(0);
-								System.out.println("Assigning lock to operation w" + writeLockTid
-										+ " from waiting list on item " + itemName1);
-							}
-							if (readWaitListId != writeLockTid) {
-								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
-										+ " keeps waiting in the wait list");
-							}
-						}
 
-						else if (waitingTransaction.substring(0, 1).equals("r")) {
-							if (writeLockTid == 0 && itemName1.equals(itemName)) {
+							else if (waitingTransaction.substring(0, 1).equals("r")) {
+								if (writeLockTid == 0 && itemName1.equals(itemName)) {
 
-								if (readList1 == null) {
-									readList1 = new ArrayList<Integer>();
+									if (readList1 == null) {
+										readList1 = new ArrayList<Integer>();
+									}
+									readList1.add(readWaitListId);
+									TransStart.lockMap.get(itemName).setTransid_RL(readList1);
+									// TransStart.waitTransactionList.remove(0);
+									TransStart.waitTransactionList.remove(index);
+									System.out.println("Assigning lock to operation r" + writeLockTid
+											+ " from waiting list on item " + itemName1);
+									for (String waitTransaction : TransStart.waitTransactionList) {
+										if (Integer.parseInt(waitTransaction.substring(1, 2)) == writeLockTid
+												&& waitTransaction.substring(0, 1).equals("e")) {
+											checkEndTransaction(writeLockTid);
+										}
+									}
+								} else {
+									System.out.println("Transaction " + waitingTransaction.substring(0, 2)
+											+ " keeps waiting in the wait list");
 								}
-								readList1.add(readWaitListId);
-								TransStart.lockMap.get(itemName).setTransid_RL(readList1);
-								TransStart.waitTransactionList.remove(0);
-								System.out.println("Assigning lock to operation r" + writeLockTid
-										+ " from waiting list on item " + itemName1);
-							} else {
-								System.out.println("Transaction " + waitingTransaction.substring(0, 2)
-										+ " keeps waiting in the wait list");
 							}
 						}
 					}
@@ -274,8 +322,10 @@ public class TransactionProcess {
 			TransStart.transMap.get(tid).setTrans_state("Blocked");
 			if (transid_itemHolding_trans == tid && oper.equals("w")) {
 				TransStart.waitTransactionList.addLast(oper + tid + itemname1);
+				TransStart.waitTransactionid.add(tid);
 			} else if (TransStart.lockMap.get(itemname1).getTransid_WL() == tid) {
 				TransStart.waitTransactionList.addLast(oper + tid + itemname1);
+				TransStart.waitTransactionid.add(tid);
 			}
 			System.out.println(oper + tid + " is waiting for item " + itemname1);
 		} else {

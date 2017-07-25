@@ -8,6 +8,7 @@ public class TransStart {
 	public static HashMap<String, LockTable> lockMap = new HashMap<String, LockTable>();
 	public static String[] readData = null;
 	public static LinkedList<String> waitTransactionList = new LinkedList<String>();
+	public static HashSet<Integer> waitTransactionid = new HashSet<Integer>();
 
 	public static void main(String args[]) throws IOException {
 		TransStart transStartObj = new TransStart();
@@ -19,7 +20,7 @@ public class TransStart {
 	}
 
 	public String[] readFile() throws IOException {
-		BufferedReader in = new BufferedReader(new FileReader("C:/Users/Luv/Desktop/input7.txt"));
+		BufferedReader in = new BufferedReader(new FileReader("E:\\Courses\\Summer-2017\\DB2\\Project 1\\Inputs\\input5.txt"));
 		String str=null;
 		ArrayList<String> lines = new ArrayList<String>();
 		while((str = in.readLine()) != null){
